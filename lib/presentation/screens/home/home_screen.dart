@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:s_template/common/extensions/widget_extension.dart';
+import 'package:s_template/presentation/provider/chats_provider.dart';
 
 class HomeScreen extends HookConsumerWidget {
   const HomeScreen({super.key});
@@ -12,9 +13,14 @@ class HomeScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final roomIdController = useTextEditingController();
     final usernameController = useTextEditingController();
+    final messageController = useTextEditingController();
 
     final isConnected = useState(false);
-    final chats = useState(<String>[]);
+    final chats = ref.watch(chatsProvider);
+
+    ref.listen(chatsProvider, (_, __) async {
+      isConnected.value = await ref.read(chatsProvider.notifier).isConnected();
+    });
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -24,7 +30,9 @@ class HomeScreen extends HookConsumerWidget {
             Row(
               children: [
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    ref.read(chatsProvider.notifier).connect(roomId: roomIdController.text);
+                  },
                   child: const Text('Connect'),
                 ),
                 isConnected.value ? const Icon(Icons.check) : const Icon(Icons.close),
@@ -45,28 +53,36 @@ class HomeScreen extends HookConsumerWidget {
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               child: ListView.builder(
-                itemCount: chats.value.length,
+                itemCount: chats.value?.length ?? 0,
                 itemBuilder: (context, index) {
-                  return Text(chats.value[index]);
+                  // safely to force non-null because will only called when chats.value is not null
+                  return Text(chats.value![index]);
                 },
               ),
             ),
           ],
         ),
       ).safeArea(),
-      bottomNavigationBar: Container(
+      bottomSheet: Container(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Expanded(
               child: TextFormField(
+                controller: messageController,
                 decoration: const InputDecoration(
                   labelText: 'Message',
                 ),
               ),
             ),
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                ref.read(chatsProvider.notifier).sendMessage(
+                  message: messageController.text,
+                  username: usernameController.text,
+                );
+                messageController.clear();
+              },
               icon: const Icon(Icons.send),
             ),
           ],
