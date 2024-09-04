@@ -18,22 +18,13 @@ class Chats extends _$Chats {
     yield <String>[];
   }
 
-  Future<bool> isConnected() async {
-    if (_isConnected) return true;
-    try {
-      await _channel.ready;
-    } catch (e) {
-      logger.e(e);
-      return false;
-    }
-    _isConnected = true;
-    return _isConnected;
-  }
+  bool isConnected() => _isConnected;
 
   Future<void> connect({required String roomId}) async {
-    if (_isConnected) disconnect();
+    if (_isConnected) await disconnect();
     _channel = WebSocketChannel.connect(Uri.parse('$_wsUrl/$roomId'));
-    if (!await isConnected()) return;
+    await _channel.ready;
+    _isConnected = true;
     _channel.stream.listen(
       (message) {
         logger.d('message: $message');
@@ -43,12 +34,13 @@ class Chats extends _$Chats {
       },
       onDone: () => disconnect(),
     );
-    state = const AsyncData([]);
+    state = AsyncData(["Connected to $roomId"]);
   }
 
-  void disconnect() {
+  Future<void> disconnect() async {
     _isConnected = false;
-    _channel.sink.close();
+    await _channel.sink.close();
+    state = const AsyncData(["Disconnected"]);
   }
 
   void sendMessage({required String message, required String username}) {
