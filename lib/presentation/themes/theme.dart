@@ -3,4 +3,8 @@ import 'package:s_template/presentation/themes/color_theme.dart';
 
 final appTheme = ThemeData.from(
   colorScheme: ColorScheme.fromSeed(seedColor: CT.primaryColor),
+).copyWith(
+  bottomSheetTheme: const BottomSheetThemeData(
+    backgroundColor: Colors.transparent,
+  ),
 );
