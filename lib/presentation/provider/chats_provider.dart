@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:s_template/common/utils/logger.dart';
@@ -20,7 +21,7 @@ class Chats extends _$Chats {
 
   bool isConnected() => _isConnected;
 
-  Future<void> connect({required String roomId}) async {
+  Future<void> connect({required String roomId, required Function(String) onMessage}) async {
     if (_isConnected) await disconnect();
     _channel = WebSocketChannel.connect(Uri.parse('$_wsUrl/$roomId'));
     await _channel.ready;
@@ -31,6 +32,7 @@ class Chats extends _$Chats {
         if (message is String) {
           state = AsyncData([...?state.value, json.decode(message)]);
         }
+        onMessage?.call(message);
       },
       onDone: () => disconnect(),
     );

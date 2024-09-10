@@ -1,3 +1,4 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:button_animations/button_animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -25,6 +26,15 @@ class HomeScreen extends HookConsumerWidget {
     ref.listen(chatsProvider, (_, __) async {
       isConnected.value = ref.read(chatsProvider.notifier).isConnected();
     });
+
+    useEffect(() {
+      AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+        if (!isAllowed) {
+          AwesomeNotifications().requestPermissionToSendNotifications();
+        }
+      });
+      return null;
+    }, []);
 
     return Scaffold(
       body: Container(
@@ -199,7 +209,17 @@ class HomeScreen extends HookConsumerWidget {
     if (isConnected) {
       ref.read(chatsProvider.notifier).disconnect();
     } else {
-      ref.read(chatsProvider.notifier).connect(roomId: roomId);
+      ref.read(chatsProvider.notifier).connect(roomId: roomId, onMessage: (message) {
+        AwesomeNotifications().createNotification(
+            content: NotificationContent(
+              id: 10,
+              channelKey: 'x-com_channel',
+              actionType: ActionType.Default,
+              title: 'New Message Received',
+              body: message,
+            )
+        );
+      });
     }
   }
 
