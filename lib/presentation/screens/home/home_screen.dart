@@ -1,12 +1,10 @@
 import 'package:button_animations/button_animations.dart';
-import 'package:button_animations/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:s_template/common/extensions/context_extension.dart';
 import 'package:s_template/common/extensions/widget_extension.dart';
 import 'package:s_template/presentation/provider/chats_provider.dart';
-import 'package:s_template/presentation/themes/assets_constant.dart';
 import 'package:s_template/presentation/themes/color_theme.dart';
 import 'package:s_template/presentation/themes/sizing.dart';
 
@@ -30,23 +28,20 @@ class HomeScreen extends HookConsumerWidget {
 
     return Scaffold(
       body: Container(
-        // decoration: const BoxDecoration(
-        //   image: DecorationImage(
-        //     image: AssetImage(ImageAsset.blackTexture),
-        //     fit: BoxFit.cover,
-        //   ),
-        // ),
         color: Colors.grey.shade900,
         height: context.height,
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Row(
                 children: [
-                  Text('Connection Status : ', style: context.textTheme.titleLarge?.copyWith(
-                    color: Colors.grey.shade300,
-                  ),),
+                  Text(
+                    'Connection Status : ',
+                    style: context.textTheme.titleLarge?.copyWith(
+                      color: Colors.grey.shade300,
+                    ),
+                  ),
                   Container(
                     height: 24,
                     width: 24,
@@ -67,8 +62,17 @@ class HomeScreen extends HookConsumerWidget {
                   TextFormField(
                     onChanged: (value) => roomId.value = value,
                     enabled: !isConnected.value,
-                    decoration: const InputDecoration(
+                    style: context.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
                       labelText: 'Room ID',
+                      disabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: CT.primaryColor.withOpacity(0.5)),
+                      ),
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: CT.primaryColor),
+                      ),
                     ),
                   ).expand(),
                   Sz.hSpacingMedium,
@@ -83,7 +87,10 @@ class HomeScreen extends HookConsumerWidget {
                       width: 160,
                       enabled: roomId.value.isNotEmpty && username.value.isNotEmpty,
                       onTap: () => _connectionButtonPressed(ref, roomId.value, isConnected.value),
-                      child: Text(isConnected.value ? 'Disconnect' : 'Connect', style: context.textTheme.titleMedium,),
+                      child: Text(
+                        isConnected.value ? 'Disconnect' : 'Connect',
+                        style: context.textTheme.titleMedium,
+                      ),
                     ),
                   ),
                 ],
@@ -91,17 +98,40 @@ class HomeScreen extends HookConsumerWidget {
               TextFormField(
                 onChanged: (value) => username.value = value,
                 enabled: !isConnected.value,
-                decoration: const InputDecoration(
+                style: context.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                ),
+                decoration: InputDecoration(
                   labelText: 'Username',
+                  disabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: CT.primaryColor.withOpacity(0.5)),
+                  ),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: CT.primaryColor),
+                  ),
                 ),
               ),
+              Sz.vSpacingLarge,
               Container(
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: ListView.builder(
+                constraints: BoxConstraints(maxHeight: context.height / 2),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                  border: Border.all(color: Colors.grey.shade800, width: 4),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: ListView.separated(
                   itemCount: chats.value?.length ?? 0,
+                  separatorBuilder: (_, index) => Sz.vSpacingSmall,
                   itemBuilder: (context, index) {
                     // safely to force non-null because will only called when chats.value is not null
-                    return Text(chats.value![index]);
+                    return Text(
+                      chats.value![index],
+                      style: context.textTheme.titleMedium?.copyWith(color: Colors.white, height: 0),
+                    );
                   },
                 ),
               ),
@@ -118,7 +148,6 @@ class HomeScreen extends HookConsumerWidget {
             width: 4,
           ),
         ),
-        margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +164,7 @@ class HomeScreen extends HookConsumerWidget {
                     controller: messageController,
                     enabled: isConnected.value,
                     maxLines: 3,
-                    minLines: 3,
+                    minLines: 1,
                     style: context.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                     ),
@@ -152,7 +181,10 @@ class HomeScreen extends HookConsumerWidget {
                 IconButton(
                   color: CT.primaryColor,
                   disabledColor: CT.primaryColor.withOpacity(0.5),
-                  onPressed: isConnected.value ? () => _sendMessage(ref, context, messageController.text, username.value) : null,
+                  onPressed: isConnected.value ? () {
+                    _sendMessage(ref, context, messageController.text, username.value);
+                    messageController.clear();
+                  } : null,
                   icon: const Icon(Icons.send),
                 ),
               ],
