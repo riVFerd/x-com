@@ -6,11 +6,11 @@ part of 'chats_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatsHash() => r'8e138159eb2c3342793b8c753392b091d6a4e1b2';
+String _$chatsHash() => r'fc40b9b31b747983eb8e2f2a7dfc058edf608b39';
 
 /// See also [Chats].
 @ProviderFor(Chats)
-final chatsProvider = StreamNotifierProvider<Chats, List<String>>.internal(
+final chatsProvider = StreamNotifierProvider<Chats, List<ChatModel>>.internal(
   Chats.new,
   name: r'chatsProvider',
   debugGetCreateSourceHash:
@@ -19,6 +19,6 @@ final chatsProvider = StreamNotifierProvider<Chats, List<String>>.internal(
   allTransitiveDependencies: null,
 );
 
-typedef _$Chats = StreamNotifier<List<String>>;
+typedef _$Chats = StreamNotifier<List<ChatModel>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

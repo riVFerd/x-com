@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:s_template/common/utils/logger.dart';
+import 'package:s_template/data/models/chat/chat_model.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 part 'chats_provider.g.dart';
@@ -15,42 +15,42 @@ class Chats extends _$Chats {
   late WebSocketChannel _channel;
 
   @override
-  Stream<List<String>> build() async* {
-    yield <String>[];
+  Stream<List<ChatModel>> build() async* {
+    yield <ChatModel>[];
   }
 
   bool isConnected() => _isConnected;
 
-  Future<void> connect({required String roomId, required Function(String) onMessage}) async {
+  Future<void> connect({required String roomId, required Function(ChatModel) onMessage}) async {
     if (_isConnected) await disconnect();
     _channel = WebSocketChannel.connect(Uri.parse('$_wsUrl/$roomId'));
     await _channel.ready;
     _isConnected = true;
     _channel.stream.listen(
       (message) {
-        logger.d('message: $message');
+        logger.d('received message: $message');
         if (message is String) {
-          state = AsyncData([...?state.value, json.decode(message)]);
+          final data = jsonDecode(message);
+          final chatData = ChatModel.fromJson(jsonDecode(data));
+          state = AsyncData([...?state.value, chatData]);
+          onMessage.call(chatData);
         }
-        onMessage?.call(message);
       },
       onDone: () => disconnect(),
     );
-    state = AsyncData(["Connected to $roomId"]);
+    state = AsyncData([
+      ChatModel(username: 'System', message: 'Connected to $roomId'),
+    ]);
   }
 
   Future<void> disconnect() async {
     _isConnected = false;
     await _channel.sink.close();
-    state = const AsyncData(["Disconnected"]);
+    state = const AsyncData([ChatModel(username: 'System', message: 'Disconnected')]);
   }
 
-  void sendMessage({required String message, required String username}) {
+  void sendMessage(ChatModel chat) {
     if (!_isConnected) return;
-    final jsonString = jsonEncode({
-      'username': username,
-      'message': message,
-    });
-    _channel.sink.add(jsonString);
+    _channel.sink.add(jsonEncode(chat.toJson()));
   }
 }

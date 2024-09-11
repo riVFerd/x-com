@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:s_template/common/extensions/context_extension.dart';
 import 'package:s_template/common/extensions/widget_extension.dart';
+import 'package:s_template/data/models/chat/chat_model.dart';
 import 'package:s_template/presentation/provider/chats_provider.dart';
 import 'package:s_template/presentation/themes/color_theme.dart';
 import 'package:s_template/presentation/themes/sizing.dart';
@@ -138,9 +139,18 @@ class HomeScreen extends HookConsumerWidget {
                   separatorBuilder: (_, index) => Sz.vSpacingSmall,
                   itemBuilder: (context, index) {
                     // safely to force non-null because will only called when chats.value is not null
-                    return Text(
-                      chats.value![index],
-                      style: context.textTheme.titleMedium?.copyWith(color: Colors.white, height: 0),
+                    final chat = chats.value![index];
+                    return RichText(
+                      text: TextSpan(
+                        text: '${chat.username}: ',
+                        style: context.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold, height: 1),
+                        children: [
+                          TextSpan(
+                            text: chat.message,
+                            style: context.textTheme.titleMedium?.copyWith(color: Colors.white, height: 1),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -191,10 +201,12 @@ class HomeScreen extends HookConsumerWidget {
                 IconButton(
                   color: CT.primaryColor,
                   disabledColor: CT.primaryColor.withOpacity(0.5),
-                  onPressed: isConnected.value ? () {
-                    _sendMessage(ref, context, messageController.text, username.value);
-                    messageController.clear();
-                  } : null,
+                  onPressed: isConnected.value
+                      ? () {
+                          _sendMessage(ref, context, ChatModel(username: username.value, message: messageController.text));
+                          messageController.clear();
+                        }
+                      : null,
                   icon: const Icon(Icons.send),
                 ),
               ],
@@ -209,25 +221,26 @@ class HomeScreen extends HookConsumerWidget {
     if (isConnected) {
       ref.read(chatsProvider.notifier).disconnect();
     } else {
-      ref.read(chatsProvider.notifier).connect(roomId: roomId, onMessage: (message) {
-        AwesomeNotifications().createNotification(
-            content: NotificationContent(
-              id: 10,
-              channelKey: 'x-com_channel',
-              actionType: ActionType.Default,
-              title: 'New Message Received',
-              body: message,
-            )
-        );
-      });
+      ref.read(chatsProvider.notifier).connect(
+            roomId: roomId,
+            onMessage: (chatData) => AwesomeNotifications().createNotification(
+              content: NotificationContent(
+                id: 10,
+                channelKey: 'x-com_channel',
+                actionType: ActionType.Default,
+                title: 'New Message Received',
+                body: chatData.displayMessage(),
+              ),
+            ),
+          );
     }
   }
 
-  void _sendMessage(WidgetRef ref, BuildContext context, String message, String username) {
-    if (message.isEmpty || username.isEmpty) {
+  void _sendMessage(WidgetRef ref, BuildContext context, ChatModel chat) {
+    if (chat.username.isEmpty || chat.message.isEmpty) {
       context.showSnackBar('Message or username cannot be empty');
       return;
     }
-    ref.read(chatsProvider.notifier).sendMessage(message: message, username: username);
+    ref.read(chatsProvider.notifier).sendMessage(chat);
   }
 }
